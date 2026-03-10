@@ -10,7 +10,9 @@ import { Parser } from "json2csv";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const db = new Database("quench_mart.db");
+const dbPath = path.join(__dirname, "quench_mart.db");
+console.log(`Initializing database at: ${dbPath}`);
+const db = new Database(dbPath);
 const JWT_SECRET = process.env.JWT_SECRET || "quench-mart-secret-key-2024";
 
 // Initialize database
@@ -93,6 +95,11 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json());
+
+  // Health check
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", timestamp: new Date().toISOString(), env: process.env.NODE_ENV });
+  });
 
   // Auth Middleware
   const authenticateToken = (req: any, res: any, next: any) => {
@@ -236,9 +243,12 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(path.join(__dirname, "dist")));
+    const distPath = path.join(__dirname, "dist");
+    console.log(`Serving static files from: ${distPath}`);
+    app.use(express.static(distPath));
     app.get("*", (req, res) => {
-      res.sendFile(path.join(__dirname, "dist", "index.html"));
+      const indexPath = path.join(distPath, "index.html");
+      res.sendFile(indexPath);
     });
   }
 
